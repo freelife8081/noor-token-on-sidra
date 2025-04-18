@@ -1,0 +1,81 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f3f6f9;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  scroll-behavior: smooth;
+}
+
+.container {
+  max-width: 700px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.08);
+  animation: fadeIn 1.5s ease;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 20px;
+  max-width: 120px;
+}
+
+h1, h2 {
+  text-align: center;
+  color: #2c3e50;
+}
+
+.description {
+  font-size: 16px;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+.token-info p {
+  margin: 5px 0;
+}
+
+.btn {
+  display: inline-block;
+  background: #10b981;
+  color: #fff;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+  text-align: center;
+}
+
+section {
+  margin-top: 40px;
+  padding-top: 20px;
+}
+
+a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Smooth fade-in animation */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInMove 1.2s ease forwards;
+}
+
+@keyframes fadeInMove {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
