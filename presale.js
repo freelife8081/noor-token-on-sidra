@@ -1,4 +1,4 @@
-const provider = new ethers.providers.Web3Provider(window.ethereum);
+let provider;
 let signer;
 let userAddress;
 
@@ -18,20 +18,27 @@ const SIDRA_CHAIN_SYMBOL = "SDA";
 const SIDRA_BLOCK_EXPLORER = "https://ledger.sidrachain.com";
 
 async function connectWallet() {
+    if (typeof window.ethereum === "undefined") {
+        alert("MetaMask is not installed.");
+        return;
+    }
+
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+
     try {
         await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
         userAddress = await signer.getAddress();
         document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
-        
-        // Switch to Sidra Chain if not already on it
-        const currentChainId = await provider.getNetwork().then(network => network.chainId);
+
+        const currentChainId = await provider.getNetwork().then(net => net.chainId);
         if (currentChainId !== SIDRA_CHAIN_ID) {
             try {
-                await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID) }]);
+                await provider.send("wallet_switchEthereumChain", [{
+                    chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID)
+                }]);
             } catch (switchError) {
                 if (switchError.code === 4902) {
-                    // Add Sidra chain if not available
                     await provider.send("wallet_addEthereumChain", [{
                         chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID),
                         chainName: SIDRA_CHAIN_NAME,
@@ -44,18 +51,17 @@ async function connectWallet() {
                         blockExplorerUrls: [SIDRA_BLOCK_EXPLORER]
                     }]);
                 } else {
-                    console.error("Failed to switch to Sidra Chain:", switchError);
-                    alert("Please switch to Sidra Chain.");
+                    alert("Please switch to the Sidra Chain manually.");
+                    return;
                 }
             }
         }
 
-        // Initialize presale contract
         presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
         updateRemainingSupply();
-    } catch (error) {
-        console.error("Wallet connection failed:", error);
-        alert("Failed to connect wallet. Please try again.");
+    } catch (err) {
+        console.error("Wallet connection failed:", err);
+        alert("Failed to connect wallet.");
     }
 }
 
@@ -64,17 +70,19 @@ async function updateRemainingSupply() {
         const supply = await presaleContract.remainingPresaleSupply();
         const formatted = ethers.utils.formatUnits(supply, 18);
         document.getElementById("remaining-supply").textContent = `${formatted} NOOR`;
-    } catch (error) {
-        console.error("Error fetching remaining supply:", error);
+    } catch (err) {
+        console.error("Error fetching supply:", err);
         document.getElementById("remaining-supply").textContent = "N/A";
     }
 }
 
 function calculateNoor() {
-    const sdaInput = document.getElementById("sda-amount").value;
+    const sdaInput = document.getElementById("sda-amount").value.trim();
     const noorOutput = document.getElementById("noor-amount");
-    if (!isNaN(sdaInput) && parseFloat(sdaInput) > 0) {
-        const noorAmount = parseFloat(sdaInput) / 0.002; // 1 NOOR = 0.002 SDA
+    const sdaValue = parseFloat(sdaInput);
+
+    if (!isNaN(sdaValue) && sdaValue > 0) {
+        const noorAmount = sdaValue / 0.002; // 1 NOOR = 0.002 SDA
         noorOutput.textContent = `${noorAmount.toFixed(2)} NOOR`;
     } else {
         noorOutput.textContent = "0 NOOR";
@@ -82,7 +90,9 @@ function calculateNoor() {
 }
 
 async function buyTokens() {
-    const sdaInput = document.getElementById("sda-amount").value;
+    const sdaInput = document.getElementById("sda-amount").value.trim();
+    const status = document.getElementById("status");
+
     if (!sdaInput || isNaN(sdaInput) || parseFloat(sdaInput) <= 0) {
         alert("Enter a valid SDA amount.");
         return;
@@ -94,18 +104,24 @@ async function buyTokens() {
         const tx = await presaleContract.buyTokens(sdaAmountInWei, {
             value: sdaAmountInWei
         });
-        document.getElementById("status").textContent = "Transaction pending...";
+        status.textContent = "Transaction pending...";
         await tx.wait();
-        document.getElementById("status").textContent = "🎉 Purchase successful!";
+        status.textContent = "🎉 Purchase successful!";
         updateRemainingSupply();
-    } catch (error) {
-        console.error("Transaction failed:", error);
-        document.getElementById("status").textContent = "❌ Transaction failed.";
+    } catch (err) {
+        console.error("Transaction failed:", err);
+        status.textContent = "❌ Transaction failed.";
     }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+    document.body.classList.toggle("light");
 }
 
 window.onload = () => {
     document.getElementById("connect-btn").addEventListener("click", connectWallet);
     document.getElementById("sda-amount").addEventListener("input", calculateNoor);
     document.getElementById("buy-btn").addEventListener("click", buyTokens);
+    document.body.classList.add("light"); // default to light mode
 };
