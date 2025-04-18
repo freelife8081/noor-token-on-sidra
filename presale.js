@@ -1,142 +1,98 @@
-// Import the Ethers.js library and initialize provider
-const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-let signer;
-let userAddress;
-
-// Presale Contract Details
-const presaleContractAddress = "0xe627DDEBa14cb730EAbB4852c67674Ae7F7113Ae";
+// Setting up ethers.js and contract details
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const presaleContractAddress = "0xe627DDEBa14cb730EAbB4852c67674Ae7F7113Ae"; // Updated presale contract address
+const walletAddress = "0x67F3a324c45761D7CE9748914F1414f50325E29B"; // Developer wallet address
 const presaleAbi = [
-  "function buyTokens(uint256 sdaAmount) external payable",
-  "function remainingPresaleSupply() public view returns (uint256)"
+    "function buyTokens(uint256 sdaAmount) external payable",
+    "function remainingPresaleSupply() external view returns (uint256)"
 ];
 
-let presaleContract;
-const totalPresaleSupply = ethers.utils.parseUnits("1000000", 18); // Total supply in wei (18 decimals)
+const presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
+const TOKEN_PRICE = 0.002; // Price of 1 NOOR in SDA
 
-// Function to connect wallet
+// Initialize wallet connection
 async function connectWallet() {
-  // Check if Ethereum wallet is installed
-  if (!window.ethereum) {
-    alert("No wallet found. Please install MetaMask or another wallet.");
-    return;
-  }
-
-  try {
-    // Request access to wallet
-    await provider.send("eth_requestAccounts", []);
-
-    // Get signer and user address
-    signer = provider.getSigner();
-    userAddress = await signer.getAddress();
-
-    // Update wallet connection status
-    document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
-
-    // Initialize contract instance
-    presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
-
-    // Update the remaining supply on the UI
-    updateRemainingSupply();
-  } catch (error) {
-    console.error("Wallet connection error:", error);
-    alert("Failed to connect wallet. Please try again.");
-  }
-}
-
-// Function to fetch and update remaining presale supply
-async function updateRemainingSupply() {
-  try {
-    const remaining = await presaleContract.remainingPresaleSupply();
-    const formatted = ethers.utils.formatUnits(remaining, 18); // Convert to human-readable format
-    document.getElementById("remaining-supply").textContent = `${formatted} NOOR`;
-
-    // Update progress bar and chart
-    updateProgress(remaining);
-    updateChart(remaining);
-  } catch (error) {
-    console.error("Failed to fetch supply:", error);
-    document.getElementById("remaining-supply").textContent = "N/A";
-    alert("Failed to fetch remaining supply. Please ensure you're connected to the correct network.");
-  }
-}
-
-// Function to calculate NOOR tokens based on SDA amount entered
-function calculateNoor() {
-  const sdaValue = parseFloat(document.getElementById("sda-amount").value);
-  const output = document.getElementById("noor-amount");
-  if (!isNaN(sdaValue) && sdaValue > 0) {
-    const noor = sdaValue / 0.002; // Conversion rate
-    output.textContent = `${noor.toFixed(2)} NOOR`;
-  } else {
-    output.textContent = "0 NOOR";
-  }
-}
-
-// Function to handle token purchase
-async function buyTokens() {
-  const sdaValue = document.getElementById("sda-amount").value;
-  const status = document.getElementById("status");
-
-  // Validate input
-  if (!sdaValue || isNaN(sdaValue) || sdaValue <= 0 || sdaValue > 100) {
-    alert("Enter a valid SDA amount (max 100)");
-    return;
-  }
-
-  try {
-    // Send transaction to buy tokens
-    const sdaAmount = ethers.utils.parseEther(sdaValue); // Convert SDA value to wei
-    const tx = await presaleContract.buyTokens(sdaAmount, { value: sdaAmount });
-    status.textContent = "Transaction pending...";
-    await tx.wait(); // Wait for transaction confirmation
-    status.textContent = "✅ Purchase successful!";
-
-    // Update UI after successful purchase
-    updateRemainingSupply();
-  } catch (error) {
-    console.error("Buy failed:", error);
-    status.textContent = "❌ Transaction failed. Check your wallet and ensure sufficient funds.";
-    alert("Transaction failed: " + error.message);
-  }
-}
-
-// Function to update the progress bar
-function updateProgress(remaining) {
-  const sold = totalPresaleSupply.sub(remaining); // Calculate sold tokens
-  const percentage = sold.mul(100).div(totalPresaleSupply).toNumber(); // Calculate percentage sold
-  document.getElementById("presale-progress").value = percentage;
-  document.getElementById("progress-label").textContent = `${percentage}% sold`;
-}
-
-// Function to update the presale chart
-let chart;
-function updateChart(remaining) {
-  const sold = totalPresaleSupply.sub(remaining);
-  const soldNoor = parseFloat(ethers.utils.formatUnits(sold, 18)); // Convert sold to human-readable format
-  const remainingNoor = parseFloat(ethers.utils.formatUnits(remaining, 18)); // Convert remaining to human-readable format
-
-  // Get chart context and create/update chart
-  const ctx = document.getElementById("presaleChart").getContext("2d");
-  if (chart) chart.destroy(); // Destroy previous chart instance if it exists
-
-  chart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Sold', 'Remaining'],
-      datasets: [{
-        data: [soldNoor, remainingNoor],
-        backgroundColor: ['#00b8d4', '#ccc']
-      }]
-    },
-    options: {
-      responsive: true
+    try {
+        await provider.send("eth_requestAccounts", []);
+        const address = await signer.getAddress();
+        document.getElementById("wallet-address").textContent = address;
+        updateRemainingSupply();
+    } catch (error) {
+        console.error("Error connecting wallet:", error);
+        alert("Please connect your wallet.");
     }
-  });
 }
 
-// Initialize event listeners on page load
+// Show remaining presale supply
+async function updateRemainingSupply() {
+    try {
+        const remainingSupply = await presaleContract.remainingPresaleSupply();
+        document.getElementById("remaining-supply").textContent = ethers.utils.formatUnits(remainingSupply, 18);
+    } catch (error) {
+        console.error("Error fetching remaining supply:", error);
+        document.getElementById("remaining-supply").textContent = "Error loading supply.";
+    }
+}
+
+// Calculate NOOR tokens dynamically
+function calculateNoorAmount() {
+    const sdaAmount = parseFloat(document.getElementById("sda-amount").value);
+    
+    // Handle invalid or empty input
+    if (isNaN(sdaAmount) || sdaAmount <= 0) {
+        document.getElementById("noor-amount").textContent = "0";
+        return;
+    }
+
+    const noorAmount = sdaAmount / TOKEN_PRICE; // Calculate NOOR tokens
+    document.getElementById("noor-amount").textContent = noorAmount.toFixed(2); // Update calculated amount
+}
+
+// Buy NOOR tokens
+async function buyTokens() {
+    const sdaAmount = document.getElementById("sda-amount").value;
+    if (!sdaAmount || sdaAmount <= 0) {
+        alert("Please enter a valid amount.");
+        return;
+    }
+
+    const sdaAmountInWei = ethers.utils.parseEther(sdaAmount);
+
+    try {
+        const tx = await presaleContract.buyTokens(sdaAmountInWei, { value: sdaAmountInWei });
+        document.getElementById("status-message").textContent = "Transaction in progress...";
+        await tx.wait();
+        document.getElementById("status-message").textContent = "Tokens purchased successfully!";
+    } catch (error) {
+        console.error("Transaction failed:", error);
+        document.getElementById("status-message").textContent = "Transaction failed. Please try again.";
+    }
+}
+
+// Animate header background colors
+function animateHeaderBackground() {
+    const header = document.querySelector("header");
+    let colors = ["#4CAF50", "#ff9800", "#2196F3"];
+    let currentIndex = 0;
+
+    setInterval(() => {
+        header.style.backgroundColor = colors[currentIndex];
+        currentIndex = (currentIndex + 1) % colors.length;
+    }, 3000); // Change color every 3 seconds
+}
+
+// Initialize the page
 window.onload = () => {
-  document.getElementById("connect-btn").addEventListener("click", connectWallet);
-  document.getElementById("sda-amount").addEventListener("input", calculateNoor);
-  document.getElementById("buy-btn").addEventListener("click", buyTokens);
+    // Animate header background color
+    animateHeaderBackground();
+
+    // Allow the user to connect their wallet via button
+    const walletConnectButton = document.getElementById("connect-wallet");
+    if (walletConnectButton) {
+        walletConnectButton.onclick = connectWallet;
+    }
+
+    // Connect wallet on page load
+    connectWallet();
 };
