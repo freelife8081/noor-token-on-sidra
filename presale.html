@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NOOR Token Presale</title>
   <link rel="stylesheet" href="presale.css">
-  <link rel="icon" href="logo.png" type="image/png">
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </head>
 <body>
@@ -13,6 +12,11 @@
     <img src="logo.png" alt="NOOR Logo" class="logo" />
     <h1>NOOR Token Presale</h1>
   </header>
+
+  <!-- Connect Wallet Button on the top-right -->
+  <div class="connect-wallet-container">
+    <button id="connect-btn">🔗 Connect Wallet</button>
+  </div>
 
   <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
 
@@ -28,7 +32,6 @@
     </section>
 
     <section class="wallet-section">
-      <button id="connect-btn">🔗 Connect Wallet</button>
       <p><strong>Wallet:</strong> <span id="wallet-address">Not connected</span></p>
     </section>
 
