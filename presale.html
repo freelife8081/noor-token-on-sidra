@@ -1,67 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NOOR Token Presale</title>
-  <link rel="stylesheet" href="presale.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noor Token Presale</title>
+    <link rel="stylesheet" href="presale.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.min.js"></script>
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="Token Logo" class="logo"/>
-    <h1>NOOR Token Presale</h1>
-    <p>Buy NOOR with SDA — only 0.002 SDA per NOOR</p>
-  </header>
+    <header>
+        <div class="container header-container">
+            <!-- Round Logo -->
+            <img src="logo.png" alt="Noor Token Logo" class="logo">
 
-  <main>
-    <section class="wallet-section">
-      <button id="connect-btn">Connect Wallet</button>
-      <p id="wallet-address">Not connected</p>
+            <!-- Title -->
+            <h1>Noor Token Presale</h1>
+
+            <!-- Wallet Connection Button -->
+            <button id="connect-wallet" onclick="connectWallet()">Connect Sidra Wallet</button>
+        </div>
+    </header>
+
+    <section class="presale-info">
+        <div class="container">
+            <h2>Welcome to the Noor Token Presale!</h2>
+            <p>Noor (NOOR) is a Sharia-compliant utility token built on the Sidra Chain, representing clarity, guidance, and ethical innovation. This presale allows you to buy NOOR tokens with SDA at a discounted price!</p>
+            <div>
+                <p><strong>Token Price:</strong> 1 NOOR = 0.002 SDA</p>
+                <p><strong>Presale Supply:</strong> 10,000,000,000 NOOR</p>
+                <p><strong>Remaining Supply:</strong> <span id="remaining-supply">Loading...</span> NOOR</p>
+            </div>
+        </div>
     </section>
 
-    <section class="token-info">
-      <h2>Token Info</h2>
-      <p><strong>Description:</strong> NOOR is the official utility token for SidraSwap ecosystem.</p>
-      <p><strong>Total Presale Supply:</strong> 1,000,000 NOOR</p>
-      <p><strong>Presale Price:</strong> 1 NOOR = 0.002 SDA</p>
-      <p><strong>Remaining Supply:</strong> <span id="remaining-supply">Loading...</span></p>
+    <section class="buy-tokens">
+        <div class="container">
+            <h3>Buy NOOR Tokens</h3>
+            <div id="wallet-info">
+                <p><strong>Wallet Address:</strong> <span id="wallet-address">Not connected</span></p>
+            </div>
+            <input type="number" id="sda-amount" placeholder="Enter SDA amount" oninput="calculateNoorAmount()" />
+            
+            <!-- Dynamic NOOR Tokens Amount -->
+            <p><strong>Calculated NOOR Tokens:</strong> <span id="noor-amount">0</span></p>
+            
+            <!-- Updated button text -->
+            <button id="buy-button" onclick="buyTokens()">Buy NOOR</button>
+            <p id="status-message"></p>
+        </div>
     </section>
 
-    <section class="buy-section">
-      <h2>Buy NOOR</h2>
-      <input type="number" id="sda-amount" placeholder="Enter SDA amount (max 100)" min="0.001" max="100" />
-      <p>You will receive: <span id="noor-amount">0 NOOR</span></p>
-      <button id="buy-btn">Buy Now</button>
-      <p id="status"></p>
-    </section>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Noor Token | All Rights Reserved</p>
+        </div>
+    </footer>
 
-    <section class="progress-section">
-      <h2>Presale Progress</h2>
-      <progress id="presale-progress" value="0" max="100"></progress>
-      <p id="progress-label">0% sold</p>
-    </section>
-
-    <section class="chart-section">
-      <h2>Presale Chart</h2>
-      <canvas id="presaleChart" width="400" height="200"></canvas>
-    </section>
-
-    <section class="post-presale">
-      <h2>Post-Presale Features</h2>
-      <ul>
-        <li>NOOR listing on Sidra DEX</li>
-        <li>Community airdrop</li>
-        <li>Burn mechanism for reducing supply</li>
-      </ul>
-    </section>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 NOOR Token | Sidra Chain</p>
-  </footer>
-
-  <script src="presale.js"></script>
+    <script src="presale.js"></script>
 </body>
 </html>
