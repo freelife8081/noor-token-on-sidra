@@ -1,15 +1,15 @@
-const provider = new ethers.providers.Web3Provider(window.ethereum);
+const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 let signer;
 let userAddress;
 
 const presaleContractAddress = "0xe627DDEBa14cb730EAbB4852c67674Ae7F7113Ae";
 const presaleAbi = [
   "function buyTokens(uint256 sdaAmount) external payable",
-  "function remainingPresaleSupply() external view returns (uint256)"
+  "function remainingPresaleSupply() public view returns (uint256)"
 ];
 
 let presaleContract;
-const TOTAL_PRESALE = ethers.utils.parseUnits("10000000000", 18); // 10B NOOR
+const totalPresaleSupply = ethers.utils.parseUnits("1000000", 18);
 
 async function connectWallet() {
   try {
@@ -17,96 +17,88 @@ async function connectWallet() {
     signer = provider.getSigner();
     userAddress = await signer.getAddress();
     document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
-
     presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
     updateRemainingSupply();
   } catch (error) {
-    console.error("Wallet connection failed:", error);
-    alert("Failed to connect wallet.");
+    console.error("Wallet connection error:", error);
+    alert("Make sure your wallet is installed and accessible.");
   }
 }
 
 async function updateRemainingSupply() {
   try {
     const remaining = await presaleContract.remainingPresaleSupply();
-    const remainingFormatted = ethers.utils.formatUnits(remaining, 18);
-    document.getElementById("remaining-supply").textContent = `${remainingFormatted} NOOR`;
-
-    const sold = TOTAL_PRESALE.sub(remaining);
-    const soldPercent = (sold.mul(100).div(TOTAL_PRESALE)).toNumber();
-
-    // Update progress bar
-    document.getElementById("progress-bar").style.width = `${soldPercent}%`;
-
-    // Update chart
-    renderChart(
-      parseFloat(ethers.utils.formatUnits(sold, 18)),
-      parseFloat(remainingFormatted)
-    );
+    const formatted = ethers.utils.formatUnits(remaining, 18);
+    document.getElementById("remaining-supply").textContent = `${formatted} NOOR`;
+    updateProgress(remaining);
+    updateChart(remaining);
   } catch (error) {
-    console.error("Failed to fetch remaining supply:", error);
+    console.error("Failed to fetch supply:", error);
     document.getElementById("remaining-supply").textContent = "N/A";
   }
 }
 
 function calculateNoor() {
-  const sdaInput = document.getElementById("sda-amount").value;
-  const noorOutput = document.getElementById("noor-amount");
-  const sda = parseFloat(sdaInput);
-  if (!isNaN(sda) && sda > 0 && sda <= 100) {
-    const noor = sda / 0.002;
-    noorOutput.textContent = `${noor.toFixed(2)} NOOR`;
+  const sdaValue = parseFloat(document.getElementById("sda-amount").value);
+  const output = document.getElementById("noor-amount");
+  if (!isNaN(sdaValue) && sdaValue > 0) {
+    const noor = sdaValue / 0.002;
+    output.textContent = `${noor.toFixed(2)} NOOR`;
   } else {
-    noorOutput.textContent = "0 NOOR";
+    output.textContent = "0 NOOR";
   }
 }
 
 async function buyTokens() {
-  const sdaInput = document.getElementById("sda-amount").value;
-  const sda = parseFloat(sdaInput);
-  if (!sda || isNaN(sda) || sda <= 0 || sda > 100) {
-    alert("Enter a valid SDA amount (1 - 100).");
+  const sdaValue = document.getElementById("sda-amount").value;
+  const status = document.getElementById("status");
+
+  if (!sdaValue || isNaN(sdaValue) || sdaValue <= 0 || sdaValue > 100) {
+    alert("Enter a valid SDA amount (max 100)");
     return;
   }
 
-  const sdaAmountInWei = ethers.utils.parseEther(sdaInput);
-
   try {
-    const tx = await presaleContract.buyTokens(sdaAmountInWei, {
-      value: sdaAmountInWei
-    });
-    document.getElementById("status").textContent = "⏳ Transaction pending...";
+    const sdaAmount = ethers.utils.parseEther(sdaValue);
+    const tx = await presaleContract.buyTokens(sdaAmount, { value: sdaAmount });
+    status.textContent = "Transaction pending...";
     await tx.wait();
-    document.getElementById("status").textContent = "✅ Purchase successful!";
+    status.textContent = "✅ Purchase successful!";
     updateRemainingSupply();
   } catch (error) {
     console.error("Buy failed:", error);
-    document.getElementById("status").textContent = "❌ Transaction failed.";
+    status.textContent = "❌ Transaction failed.";
   }
 }
 
-function renderChart(sold, remaining) {
-  const ctx = document.getElementById("presale-chart").getContext("2d");
-  if (window.chartInstance) {
-    window.chartInstance.destroy();
-  }
+function updateProgress(remaining) {
+  const sold = totalPresaleSupply.sub(remaining);
+  const percentage = sold.mul(100).div(totalPresaleSupply).toNumber();
+  document.getElementById("presale-progress").value = percentage;
+  document.getElementById("progress-label").textContent = `${percentage}% sold`;
+}
 
-  window.chartInstance = new Chart(ctx, {
+let chart;
+
+function updateChart(remaining) {
+  const sold = totalPresaleSupply.sub(remaining);
+  const soldNoor = parseFloat(ethers.utils.formatUnits(sold, 18));
+  const remainingNoor = parseFloat(ethers.utils.formatUnits(remaining, 18));
+
+  const ctx = document.getElementById("presaleChart").getContext("2d");
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Sold NOOR', 'Remaining NOOR'],
+      labels: ['Sold', 'Remaining'],
       datasets: [{
-        data: [sold, remaining],
-        backgroundColor: ['#00b8d4', '#ddd']
+        data: [soldNoor, remainingNoor],
+        backgroundColor: ['#00b8d4', '#ccc']
       }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'bottom'
-        }
-      }
+      responsive: true
     }
   });
 }
