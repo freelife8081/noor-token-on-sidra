@@ -4,187 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NOOR Token Presale</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"/>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-      color: #fff;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 420px;
-      margin: 50px auto;
-      background-color: #1a1a2e;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      text-align: center;
-    }
-
-    h1 {
-      margin-bottom: 24px;
-      font-size: 28px;
-      color: #f7c948;
-    }
-
-    img.logo {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      margin-bottom: 20px;
-      animation: pulse 3s infinite ease-in-out;
-      box-shadow: 0 0 15px 4px rgba(255, 215, 0, 0.4);
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 15px 4px rgba(255, 215, 0, 0.4);
-      }
-      50% {
-        box-shadow: 0 0 25px 6px rgba(255, 215, 0, 0.6);
-      }
-      100% {
-        box-shadow: 0 0 15px 4px rgba(255, 215, 0, 0.4);
-      }
-    }
-
-    input[type="number"] {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      border: none;
-      border-radius: 8px;
-    }
-
-    button {
-      background: #f7c948;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      color: #000;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-      width: 100%;
-    }
-
-    button:hover {
-      background: #ffd369;
-    }
-
-    .info {
-      margin: 10px 0;
-      font-size: 16px;
-    }
-
-    .highlight {
-      color: #00f7ff;
-      font-weight: bold;
-    }
-
-    .gold {
-      color: #f7c948;
-    }
-  </style>
+  <link rel="stylesheet" href="presale.css">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </head>
 <body>
-  <div class="container">
+  <header>
     <img src="logo.png" alt="NOOR Logo" class="logo" />
-
     <h1>NOOR Token Presale</h1>
+  </header>
 
-    <button id="connect-btn">🔗 Connect Wallet</button>
-    <p class="info" id="wallet-address">Wallet not connected</p>
+  <main>
+    <section class="presale-card">
+      <p><strong>Token:</strong> NOOR</p>
+      <p><strong>Symbol:</strong> NOOR</p>
+      <p><strong>Total Supply:</strong> 21,000,000,000</p>
+      <p><strong>Presale Supply:</strong> 10,000,000,000</p>
+      <p><strong>Presale Price:</strong> 1 NOOR = 0.002 SDA</p>
+      <p><strong>Remaining Supply:</strong> <span id="remaining-supply">Loading...</span></p>
+      <p><strong>Listing:</strong> Will be listed on Sidra DEX</p>
+    </section>
 
-    <label for="sda-amount">Enter SDA Amount</label>
-    <input type="number" id="sda-amount" placeholder="0.00 SDA" min="0" step="any" />
+    <section class="wallet-section">
+      <button id="connect-btn">🔗 Connect Wallet</button>
+      <p><strong>Wallet:</strong> <span id="wallet-address">Not connected</span></p>
+    </section>
 
-    <p class="info">You'll receive: <span class="highlight" id="noor-amount">0 NOOR</span></p>
-    <p class="info">Remaining Presale Supply: <span class="gold" id="remaining-supply">Loading...</span></p>
+    <section class="buy-section">
+      <label for="sda-amount">Enter SDA Amount:</label>
+      <input type="number" id="sda-amount" placeholder="e.g. 1" min="0" step="any"/>
+      
+      <p><strong>You will get:</strong> <span id="noor-amount">0 NOOR</span></p>
+      <button id="buy-btn">🚀 Buy NOOR</button>
+      <p id="status"></p>
+    </section>
+  </main>
 
-    <button id="buy-btn">🛒 Buy NOOR</button>
-    <p id="status"></p>
-  </div>
+  <footer>
+    <p>&copy; 2025 NOOR Token | Built on Sidra Chain</p>
+  </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  <script>
-    const presaleAddress = "0xe627DDEBa14cb730EAbB4852c67674Ae7F7113Ae";
-    const SDA_DECIMALS = 18;
-    const NOOR_DECIMALS = 18;
-    const SDA_PER_NOOR = 0.002; // 1 NOOR = 0.002 SDA
-    const NOOR_PER_SDA = 1 / SDA_PER_NOOR;
-
-    const presaleABI = [
-      "function buy() payable",
-      "function getRemainingPresaleSupply() view returns (uint256)"
-    ];
-
-    let provider, signer, contract;
-
-    async function connectWallet() {
-      if (!window.ethereum) {
-        alert("Please install MetaMask.");
-        return;
-      }
-
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      const address = await signer.getAddress();
-      document.getElementById("wallet-address").innerText = `Connected: ${address}`;
-
-      contract = new ethers.Contract(presaleAddress, presaleABI, signer);
-      updateRemainingSupply();
-    }
-
-    async function updateRemainingSupply() {
-      if (!contract) return;
-      const supply = await contract.getRemainingPresaleSupply();
-      const formatted = ethers.utils.formatUnits(supply, NOOR_DECIMALS);
-      document.getElementById("remaining-supply").innerText = `${formatted} NOOR`;
-    }
-
-    function updateCalculation() {
-      const sdaAmount = parseFloat(document.getElementById("sda-amount").value);
-      if (isNaN(sdaAmount)) {
-        document.getElementById("noor-amount").innerText = "0 NOOR";
-        return;
-      }
-
-      const noorAmount = sdaAmount * NOOR_PER_SDA;
-      document.getElementById("noor-amount").innerText = `${noorAmount.toFixed(4)} NOOR`;
-    }
-
-    async function buyToken() {
-      const sdaInput = document.getElementById("sda-amount").value;
-      if (!sdaInput || isNaN(sdaInput) || parseFloat(sdaInput) <= 0) {
-        alert("Enter a valid SDA amount.");
-        return;
-      }
-
-      const amountInWei = ethers.utils.parseUnits(sdaInput, SDA_DECIMALS);
-
-      try {
-        document.getElementById("status").innerText = "⏳ Processing transaction...";
-        const tx = await contract.buy({ value: amountInWei });
-        await tx.wait();
-        document.getElementById("status").innerText = "✅ Purchase successful!";
-        updateRemainingSupply();
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "❌ Transaction failed.";
-      }
-    }
-
-    document.getElementById("connect-btn").addEventListener("click", connectWallet);
-    document.getElementById("sda-amount").addEventListener("input", updateCalculation);
-    document.getElementById("buy-btn").addEventListener("click", buyToken);
-  </script>
+  <script src="presale.js"></script>
 </body>
 </html>
