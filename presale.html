@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NOOR Token Presale</title>
+  <title>Noor Token Presale</title>
   <link href="style.css" rel="stylesheet"/>
 </head>
 <body>
@@ -12,7 +12,7 @@
     <img src="logo.png" alt="Noor Token Logo" class="logo"/>
 
     <h1>Noor Token (NOOR) Presale</h1>
-    <p>Presale Price: <strong>1 NOOR = 0.2 SDA</strong></p>
+    <p>Presale Price: <strong>1 NOOR = 0.002 SDA</strong></p>
 
     <!-- Connect Wallet Button -->
     <button onclick="connectWallet()" class="btn">🔗 Connect Wallet</button>
@@ -43,13 +43,12 @@
   </div>
 
   <script>
-    const PRESALE_CONTRACT = "#"; // Replace with actual contract address
-    const SDA_DECIMALS = 18;
-    const NOOR_PER_SDA = 5; // 1 NOOR = 0.2 SDA → 1 SDA = 5 NOOR
+    const PRESALE_CONTRACT    = "0xYourPresaleContractAddress"; // replace with your presale CA
+    const SDA_DECIMALS        = 18;
+    const NOOR_PER_SDA        = 500;   // 1 NOOR = 0.002 SDA → 1 SDA = 500 NOOR
 
     let userAccount;
 
-    // Connect wallet function
     async function connectWallet() {
       if (window.ethereum) {
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -60,27 +59,24 @@
       }
     }
 
-    // Calculate NOOR based on SDA input
     function calculateTokens() {
       const sda = parseFloat(document.getElementById("sdaAmount").value || 0);
       document.getElementById("noorAmount").innerText = sda * NOOR_PER_SDA;
     }
 
-    // Buy tokens function
     async function buyTokens() {
       const sdaValue = document.getElementById("sdaAmount").value;
       if (!window.ethereum || !userAccount) {
         alert("Please connect your wallet first.");
         return;
       }
-
       const sdaAmount = BigInt(sdaValue * 10 ** SDA_DECIMALS).toString();
 
       const txParams = {
         from: userAccount,
         to: PRESALE_CONTRACT,
-        value: "0x0", // Assuming using `approve + buy()` method
-        data: "",     // You can customize this based on your smart contract ABI
+        value: "0x0",
+        data: "" // replace with your contract’s buy() call data if needed
       };
 
       try {
