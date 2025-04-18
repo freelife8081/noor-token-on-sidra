@@ -3,52 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NOOR Token Presale</title>
-  <link rel="stylesheet" href="presale.css">
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <title>Noor Token Presale</title>
+  <link rel="stylesheet" href="presale.css" />
 </head>
-<body>
+<body class="light">
+
   <header>
-    <img src="logo.png" alt="NOOR Logo" class="logo" />
-    <h1>NOOR Token Presale</h1>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1>Noor Token Presale</h1>
   </header>
 
-  <!-- Connect Wallet Button on the top-right -->
   <div class="connect-wallet-container">
-    <button id="connect-btn">🔗 Connect Wallet</button>
+    <button id="connect-btn">Connect Wallet</button>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
   </div>
 
-  <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-
   <main>
-    <section class="presale-card">
-      <p><strong>Token:</strong> NOOR</p>
-      <p><strong>Symbol:</strong> NOOR</p>
-      <p><strong>Total Supply:</strong> 21,000,000,000</p>
-      <p><strong>Presale Supply:</strong> 10,000,000,000</p>
-      <p><strong>Presale Price:</strong> 1 NOOR = 0.002 SDA</p>
-      <p><strong>Remaining Supply:</strong> <span id="remaining-supply">Loading...</span></p>
-      <p><strong>Listing:</strong> Will be listed on Sidra DEX</p>
-    </section>
+    <div class="wallet-section">
+      <p id="wallet-address">Not connected</p>
+    </div>
 
-    <section class="wallet-section">
-      <p><strong>Wallet:</strong> <span id="wallet-address">Not connected</span></p>
-    </section>
-
-    <section class="buy-section">
-      <label for="sda-amount">Enter SDA Amount:</label>
-      <input type="number" id="sda-amount" placeholder="e.g. 1" min="0" step="any"/>
-      
-      <p><strong>You will get:</strong> <span id="noor-amount">0 NOOR</span></p>
-      <button id="buy-btn">🚀 Buy NOOR</button>
+    <div class="buy-section">
+      <h2>Buy NOOR Tokens</h2>
+      <label for="sda-amount">Enter SDA Amount:</label><br/>
+      <input type="number" id="sda-amount" placeholder="e.g. 10" /><br/>
+      <p>You will receive: <span id="noor-amount">0 NOOR</span></p>
+      <button id="buy-btn">Buy Tokens</button>
       <p id="status"></p>
-    </section>
+    </div>
+
+    <div class="supply-section">
+      <h3>Remaining Presale Supply:</h3>
+      <p id="remaining-supply">Loading...</p>
+    </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 NOOR Token | Built on Sidra Chain</p>
+    <p>&copy; 2025 Noor Token. All rights reserved.</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
   <script src="presale.js"></script>
 </body>
 </html>
