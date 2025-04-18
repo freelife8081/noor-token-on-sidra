@@ -4,124 +4,122 @@ let userAddress;
 
 const presaleContractAddress = "0xe627DDEBa14cb730EAbB4852c67674Ae7F7113Ae";
 const presaleAbi = [
-    "function buyTokens(uint256 sdaAmount) external payable",
-    "function remainingPresaleSupply() external view returns (uint256)"
+  "function buyTokens(uint256 sdaAmount) external payable",
+  "function remainingPresaleSupply() external view returns (uint256)",
+  "function getUserSpent(address user) external view returns (uint256)"
 ];
 
 let presaleContract;
 
-// Sidra Chain details
-const SIDRA_CHAIN_ID = 97453;
-const SIDRA_RPC_URL = "https://node.sidrachain.com";
-const SIDRA_CHAIN_NAME = "Sidra Chain";
-const SIDRA_CHAIN_SYMBOL = "SDA";
-const SIDRA_BLOCK_EXPLORER = "https://ledger.sidrachain.com";
-
 async function connectWallet() {
-    if (typeof window.ethereum === "undefined") {
-        alert("MetaMask is not installed.");
-        return;
-    }
+  if (!window.ethereum) {
+    alert("Please install MetaMask.");
+    return;
+  }
 
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  userAddress = await signer.getAddress();
+  document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
 
-    try {
-        await provider.send("eth_requestAccounts", []);
-        userAddress = await signer.getAddress();
-        document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
-
-        const currentChainId = await provider.getNetwork().then(net => net.chainId);
-        if (currentChainId !== SIDRA_CHAIN_ID) {
-            try {
-                await provider.send("wallet_switchEthereumChain", [{
-                    chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID)
-                }]);
-            } catch (switchError) {
-                if (switchError.code === 4902) {
-                    await provider.send("wallet_addEthereumChain", [{
-                        chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID),
-                        chainName: SIDRA_CHAIN_NAME,
-                        rpcUrls: [SIDRA_RPC_URL],
-                        nativeCurrency: {
-                            name: SIDRA_CHAIN_SYMBOL,
-                            symbol: SIDRA_CHAIN_SYMBOL,
-                            decimals: 18
-                        },
-                        blockExplorerUrls: [SIDRA_BLOCK_EXPLORER]
-                    }]);
-                } else {
-                    alert("Please switch to the Sidra Chain manually.");
-                    return;
-                }
-            }
-        }
-
-        presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
-        updateRemainingSupply();
-    } catch (err) {
-        console.error("Wallet connection failed:", err);
-        alert("Failed to connect wallet.");
-    }
+  presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
+  updateRemainingSupply();
+  updateUserStats();
 }
 
 async function updateRemainingSupply() {
-    try {
-        const supply = await presaleContract.remainingPresaleSupply();
-        const formatted = ethers.utils.formatUnits(supply, 18);
-        document.getElementById("remaining-supply").textContent = `${formatted} NOOR`;
-    } catch (err) {
-        console.error("Error fetching supply:", err);
-        document.getElementById("remaining-supply").textContent = "N/A";
-    }
+  try {
+    const supply = await presaleContract.remainingPresaleSupply();
+    document.getElementById("remaining-supply").textContent =
+      `${ethers.utils.formatEther(supply)} NOOR`;
+  } catch (err) {
+    console.error("Error fetching supply:", err);
+    document.getElementById("remaining-supply").textContent = "N/A";
+  }
+}
+
+async function updateUserStats() {
+  try {
+    const spent = await presaleContract.getUserSpent(userAddress);
+    const spentInSDA = ethers.utils.formatEther(spent);
+    document.getElementById("user-spent").textContent = `${spentInSDA} SDA`;
+  } catch (err) {
+    console.error("Error fetching user stats:", err);
+    document.getElementById("user-spent").textContent = "N/A";
+  }
 }
 
 function calculateNoor() {
-    const sdaInput = document.getElementById("sda-amount").value.trim();
-    const noorOutput = document.getElementById("noor-amount");
-    const sdaValue = parseFloat(sdaInput);
-
-    if (!isNaN(sdaValue) && sdaValue > 0) {
-        const noorAmount = sdaValue / 0.002; // 1 NOOR = 0.002 SDA
-        noorOutput.textContent = `${noorAmount.toFixed(2)} NOOR`;
-    } else {
-        noorOutput.textContent = "0 NOOR";
-    }
+  const sdaAmount = parseFloat(document.getElementById("sda-amount").value);
+  const noorAmount = isNaN(sdaAmount) ? 0 : sdaAmount / 0.002;
+  document.getElementById("noor-amount").textContent = `${noorAmount.toFixed(2)} NOOR`;
 }
 
 async function buyTokens() {
-    const sdaInput = document.getElementById("sda-amount").value.trim();
-    const status = document.getElementById("status");
+  const inputField = document.getElementById("sda-amount");
+  const sdaInput = inputField.value.trim();
+  const status = document.getElementById("status");
 
-    if (!sdaInput || isNaN(sdaInput) || parseFloat(sdaInput) <= 0) {
-        alert("Enter a valid SDA amount.");
-        return;
-    }
+  if (!sdaInput || isNaN(sdaInput) || parseFloat(sdaInput) <= 0) {
+    alert("Enter a valid SDA amount.");
+    return;
+  }
 
-    const sdaAmountInWei = ethers.utils.parseEther(sdaInput);
+  if (parseFloat(sdaInput) > 100) {
+    alert("Maximum purchase limit is 100 SDA.");
+    inputField.value = "100";
+    calculateNoor();
+    return;
+  }
 
-    try {
-        const tx = await presaleContract.buyTokens(sdaAmountInWei, {
-            value: sdaAmountInWei
-        });
-        status.textContent = "Transaction pending...";
-        await tx.wait();
-        status.textContent = "🎉 Purchase successful!";
-        updateRemainingSupply();
-    } catch (err) {
-        console.error("Transaction failed:", err);
-        status.textContent = "❌ Transaction failed.";
-    }
+  const sdaAmountInWei = ethers.utils.parseEther(sdaInput);
+
+  try {
+    const tx = await presaleContract.buyTokens(sdaAmountInWei, {
+      value: sdaAmountInWei
+    });
+    status.textContent = "Transaction pending...";
+    await tx.wait();
+    status.textContent = "🎉 Purchase successful!";
+    updateRemainingSupply();
+    updateUserStats();
+  } catch (err) {
+    console.error("Transaction failed:", err);
+    status.textContent = "❌ Transaction failed.";
+  }
 }
 
-function toggleTheme() {
-    document.body.classList.toggle("dark");
-    document.body.classList.toggle("light");
+function startCountdown(endDate) {
+  const timerEl = document.getElementById("timer");
+
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const distance = endDate - now;
+
+    if (distance <= 0) {
+      timerEl.textContent = "Presale Ended";
+      return;
+    }
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hrs = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((distance % (1000 * 60)) / 1000);
+
+    timerEl.textContent = `${days}d ${hrs}h ${mins}m ${secs}s`;
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
 }
 
 window.onload = () => {
-    document.getElementById("connect-btn").addEventListener("click", connectWallet);
-    document.getElementById("sda-amount").addEventListener("input", calculateNoor);
-    document.getElementById("buy-btn").addEventListener("click", buyTokens);
-    document.body.classList.add("light"); // default to light mode
+  document.getElementById("connect-btn").addEventListener("click", connectWallet);
+  document.getElementById("sda-amount").addEventListener("input", calculateNoor);
+  document.getElementById("buy-btn").addEventListener("click", buyTokens);
+
+  // Set your presale end date here (YYYY-MM-DDTHH:MM:SSZ format)
+  const endDate = new Date("2025-05-01T23:59:59Z").getTime();
+  startCountdown(endDate);
 };
