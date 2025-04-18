@@ -69,6 +69,12 @@ async function buyTokens() {
     }
 }
 
+function toggleTheme() {
+    const body = document.body;
+    body.classList.toggle("dark");
+    body.classList.toggle("light");
+}
+
 window.onload = () => {
     document.getElementById("connect-btn").addEventListener("click", connectWallet);
     document.getElementById("sda-amount").addEventListener("input", calculateNoor);
