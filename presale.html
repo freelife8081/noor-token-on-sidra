@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NOOR Token Presale</title>
+  <link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+  <div class="container fade-in">
+    <!-- Logo -->
+    <img src="logo.png" alt="Noor Token Logo" class="logo"/>
+
+    <h1>Noor Token (NOOR) Presale</h1>
+    <p>Presale Price: <strong>1 NOOR = 0.2 SDA</strong></p>
+
+    <!-- Connect Wallet Button -->
+    <button onclick="connectWallet()" class="btn">🔗 Connect Wallet</button>
+
+    <div class="form">
+      <label>Enter SDA amount to spend:</label>
+      <input type="number" id="sdaAmount" placeholder="e.g. 100" oninput="calculateTokens()" />
+      <p>You will receive: <span id="noorAmount">0</span> NOOR</p>
+      <button onclick="buyTokens()" class="btn">Buy NOOR</button>
+    </div>
+
+    <hr>
+
+    <section class="fade-in">
+      <h2>About Us</h2>
+      <p>
+        We are a team of blockchain developers, scholars, and entrepreneurs focused on building ethical decentralized finance solutions. 
+        Noor Token is our vision of a halal, transparent, and accessible digital future on the Sidra blockchain.
+      </p>
+    </section>
+
+    <section class="fade-in">
+      <h2>Contact</h2>
+      <p>Email: <a href="mailto:team@noortoken.org">team@noortoken.org</a></p>
+      <p>Twitter: <a href="https://twitter.com/NoorToken" target="_blank">@NoorToken</a></p>
+      <p>Telegram: <a href="https://t.me/NoorTokenCommunity" target="_blank">t.me/NoorTokenCommunity</a></p>
+    </section>
+  </div>
+
+  <script>
+    const PRESALE_CONTRACT = "#"; // Replace with actual contract address
+    const SDA_DECIMALS = 18;
+    const NOOR_PER_SDA = 5; // 1 NOOR = 0.2 SDA → 1 SDA = 5 NOOR
+
+    let userAccount;
+
+    // Connect wallet function
+    async function connectWallet() {
+      if (window.ethereum) {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        userAccount = accounts[0];
+        alert("Connected: " + userAccount);
+      } else {
+        alert("Please install MetaMask or another Web3 wallet.");
+      }
+    }
+
+    // Calculate NOOR based on SDA input
+    function calculateTokens() {
+      const sda = parseFloat(document.getElementById("sdaAmount").value || 0);
+      document.getElementById("noorAmount").innerText = sda * NOOR_PER_SDA;
+    }
+
+    // Buy tokens function
+    async function buyTokens() {
+      const sdaValue = document.getElementById("sdaAmount").value;
+      if (!window.ethereum || !userAccount) {
+        alert("Please connect your wallet first.");
+        return;
+      }
+
+      const sdaAmount = BigInt(sdaValue * 10 ** SDA_DECIMALS).toString();
+
+      const txParams = {
+        from: userAccount,
+        to: PRESALE_CONTRACT,
+        value: "0x0", // Assuming using `approve + buy()` method
+        data: "",     // You can customize this based on your smart contract ABI
+      };
+
+      try {
+        await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [txParams],
+        });
+        alert("Transaction sent!");
+      } catch (err) {
+        console.error(err);
+        alert("Transaction failed!");
+      }
+    }
+  </script>
+</body>
+</html>
