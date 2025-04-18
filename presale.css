@@ -23,7 +23,6 @@ header .logo {
   width: 50px;
   height: 50px;
   margin-bottom: 10px;
-  animation: fadeIn 2s ease-in-out;
 }
 
 main {
@@ -99,12 +98,6 @@ button.theme-toggle {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
 }
 
 /* Responsive tweaks */
