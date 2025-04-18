@@ -1,70 +1,130 @@
+/* General Styles */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: #f9f9f9;
+  background-color: #f4f4f9;
   color: #333;
 }
 
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Header Styles */
 header {
-  background: linear-gradient(135deg, #0061ff, #00b8d4);
-  padding: 20px;
-  text-align: center;
+  background-color: #4CAF50;
   color: white;
+  padding: 15px;
+  text-align: center;
+  position: relative; /* To position the "Connect Wallet" button */
 }
 
-.logo {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 10px;
+header .header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
+header .logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  margin: 0;
+  flex-grow: 1;
+  text-align: center;
+}
+
+header #connect-wallet {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+header #connect-wallet:hover {
+  background-color: #e68a00;
+}
+
+/* Main Content */
 main {
   max-width: 800px;
-  margin: auto;
+  margin: 20px auto;
   padding: 20px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 section {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
+/* Input and Button Styles */
 input[type="number"] {
-  padding: 10px;
   width: 100%;
-  max-width: 300px;
-  margin-bottom: 10px;
+  padding: 10px;
+  margin: 10px 0;
   border-radius: 5px;
   border: 1px solid #ccc;
 }
 
-button {
-  padding: 12px 20px;
-  font-size: 16px;
-  background-color: #0061ff;
+/* Buy NOOR Button */
+#buy-button {
+  display: inline-block;
+  padding: 12px 25px;
+  background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-button:hover {
-  background-color: #00b8d4;
+#buy-button:hover {
+  background-color: #45a049;
+  transform: scale(1.05);
 }
 
+/* Footer Styles */
 footer {
   text-align: center;
+  padding: 15px;
   background: #333;
   color: white;
-  padding: 15px;
 }
 
-#status {
-  margin-top: 10px;
-}
+/* Responsive Design for Mobile */
+@media (max-width: 768px) {
+  header .header-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 
-progress {
-  width: 100%;
-  height: 20px;
-  margin-top: 10px;
+  header .logo {
+    margin-bottom: 10px;
+  }
+
+  header h1 {
+    margin-bottom: 10px;
+  }
+
+  header #connect-wallet {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 10px;
+  }
 }
