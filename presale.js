@@ -1,75 +1,71 @@
-let provider;
+const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer;
 let userAddress;
 
 const presaleContractAddress = "0xe627DDEBa14cb730EAbB4852c67674Ae7F7113Ae";
 const presaleAbi = [
   "function buyTokens(uint256 sdaAmount) external payable",
-  "function remainingPresaleSupply() external view returns (uint256)",
-  "function getUserSpent(address user) external view returns (uint256)"
+  "function remainingPresaleSupply() external view returns (uint256)"
 ];
 
 let presaleContract;
+const TOTAL_PRESALE = ethers.utils.parseUnits("10000000000", 18); // 10B NOOR
 
 async function connectWallet() {
-  if (!window.ethereum) {
-    alert("Please install MetaMask.");
-    return;
+  try {
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    userAddress = await signer.getAddress();
+    document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
+
+    presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
+    updateRemainingSupply();
+  } catch (error) {
+    console.error("Wallet connection failed:", error);
+    alert("Failed to connect wallet.");
   }
-
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = provider.getSigner();
-  userAddress = await signer.getAddress();
-  document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
-
-  presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
-  updateRemainingSupply();
-  updateUserStats();
 }
 
 async function updateRemainingSupply() {
   try {
-    const supply = await presaleContract.remainingPresaleSupply();
-    document.getElementById("remaining-supply").textContent =
-      `${ethers.utils.formatEther(supply)} NOOR`;
-  } catch (err) {
-    console.error("Error fetching supply:", err);
+    const remaining = await presaleContract.remainingPresaleSupply();
+    const remainingFormatted = ethers.utils.formatUnits(remaining, 18);
+    document.getElementById("remaining-supply").textContent = `${remainingFormatted} NOOR`;
+
+    const sold = TOTAL_PRESALE.sub(remaining);
+    const soldPercent = (sold.mul(100).div(TOTAL_PRESALE)).toNumber();
+
+    // Update progress bar
+    document.getElementById("progress-bar").style.width = `${soldPercent}%`;
+
+    // Update chart
+    renderChart(
+      parseFloat(ethers.utils.formatUnits(sold, 18)),
+      parseFloat(remainingFormatted)
+    );
+  } catch (error) {
+    console.error("Failed to fetch remaining supply:", error);
     document.getElementById("remaining-supply").textContent = "N/A";
   }
 }
 
-async function updateUserStats() {
-  try {
-    const spent = await presaleContract.getUserSpent(userAddress);
-    const spentInSDA = ethers.utils.formatEther(spent);
-    document.getElementById("user-spent").textContent = `${spentInSDA} SDA`;
-  } catch (err) {
-    console.error("Error fetching user stats:", err);
-    document.getElementById("user-spent").textContent = "N/A";
-  }
-}
-
 function calculateNoor() {
-  const sdaAmount = parseFloat(document.getElementById("sda-amount").value);
-  const noorAmount = isNaN(sdaAmount) ? 0 : sdaAmount / 0.002;
-  document.getElementById("noor-amount").textContent = `${noorAmount.toFixed(2)} NOOR`;
+  const sdaInput = document.getElementById("sda-amount").value;
+  const noorOutput = document.getElementById("noor-amount");
+  const sda = parseFloat(sdaInput);
+  if (!isNaN(sda) && sda > 0 && sda <= 100) {
+    const noor = sda / 0.002;
+    noorOutput.textContent = `${noor.toFixed(2)} NOOR`;
+  } else {
+    noorOutput.textContent = "0 NOOR";
+  }
 }
 
 async function buyTokens() {
-  const inputField = document.getElementById("sda-amount");
-  const sdaInput = inputField.value.trim();
-  const status = document.getElementById("status");
-
-  if (!sdaInput || isNaN(sdaInput) || parseFloat(sdaInput) <= 0) {
-    alert("Enter a valid SDA amount.");
-    return;
-  }
-
-  if (parseFloat(sdaInput) > 100) {
-    alert("Maximum purchase limit is 100 SDA.");
-    inputField.value = "100";
-    calculateNoor();
+  const sdaInput = document.getElementById("sda-amount").value;
+  const sda = parseFloat(sdaInput);
+  if (!sda || isNaN(sda) || sda <= 0 || sda > 100) {
+    alert("Enter a valid SDA amount (1 - 100).");
     return;
   }
 
@@ -79,47 +75,44 @@ async function buyTokens() {
     const tx = await presaleContract.buyTokens(sdaAmountInWei, {
       value: sdaAmountInWei
     });
-    status.textContent = "Transaction pending...";
+    document.getElementById("status").textContent = "⏳ Transaction pending...";
     await tx.wait();
-    status.textContent = "🎉 Purchase successful!";
+    document.getElementById("status").textContent = "✅ Purchase successful!";
     updateRemainingSupply();
-    updateUserStats();
-  } catch (err) {
-    console.error("Transaction failed:", err);
-    status.textContent = "❌ Transaction failed.";
+  } catch (error) {
+    console.error("Buy failed:", error);
+    document.getElementById("status").textContent = "❌ Transaction failed.";
   }
 }
 
-function startCountdown(endDate) {
-  const timerEl = document.getElementById("timer");
-
-  function updateCountdown() {
-    const now = new Date().getTime();
-    const distance = endDate - now;
-
-    if (distance <= 0) {
-      timerEl.textContent = "Presale Ended";
-      return;
-    }
-
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hrs = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const secs = Math.floor((distance % (1000 * 60)) / 1000);
-
-    timerEl.textContent = `${days}d ${hrs}h ${mins}m ${secs}s`;
+function renderChart(sold, remaining) {
+  const ctx = document.getElementById("presale-chart").getContext("2d");
+  if (window.chartInstance) {
+    window.chartInstance.destroy();
   }
 
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
+  window.chartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Sold NOOR', 'Remaining NOOR'],
+      datasets: [{
+        data: [sold, remaining],
+        backgroundColor: ['#00b8d4', '#ddd']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
 }
 
 window.onload = () => {
   document.getElementById("connect-btn").addEventListener("click", connectWallet);
   document.getElementById("sda-amount").addEventListener("input", calculateNoor);
   document.getElementById("buy-btn").addEventListener("click", buyTokens);
-
-  // Set your presale end date here (YYYY-MM-DDTHH:MM:SSZ format)
-  const endDate = new Date("2025-05-01T23:59:59Z").getTime();
-  startCountdown(endDate);
 };
