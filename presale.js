@@ -10,12 +10,47 @@ const presaleAbi = [
 
 let presaleContract;
 
+// Sidra Chain details
+const SIDRA_CHAIN_ID = 97453;
+const SIDRA_RPC_URL = "https://node.sidrachain.com";
+const SIDRA_CHAIN_NAME = "Sidra Chain";
+const SIDRA_CHAIN_SYMBOL = "SDA";
+const SIDRA_BLOCK_EXPLORER = "https://ledger.sidrachain.com";
+
 async function connectWallet() {
     try {
         await provider.send("eth_requestAccounts", []);
         signer = provider.getSigner();
         userAddress = await signer.getAddress();
         document.getElementById("wallet-address").textContent = `Connected: ${userAddress}`;
+        
+        // Switch to Sidra Chain if not already on it
+        const currentChainId = await provider.getNetwork().then(network => network.chainId);
+        if (currentChainId !== SIDRA_CHAIN_ID) {
+            try {
+                await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID) }]);
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    // Add Sidra chain if not available
+                    await provider.send("wallet_addEthereumChain", [{
+                        chainId: ethers.utils.hexValue(SIDRA_CHAIN_ID),
+                        chainName: SIDRA_CHAIN_NAME,
+                        rpcUrls: [SIDRA_RPC_URL],
+                        nativeCurrency: {
+                            name: SIDRA_CHAIN_SYMBOL,
+                            symbol: SIDRA_CHAIN_SYMBOL,
+                            decimals: 18
+                        },
+                        blockExplorerUrls: [SIDRA_BLOCK_EXPLORER]
+                    }]);
+                } else {
+                    console.error("Failed to switch to Sidra Chain:", switchError);
+                    alert("Please switch to Sidra Chain.");
+                }
+            }
+        }
+
+        // Initialize presale contract
         presaleContract = new ethers.Contract(presaleContractAddress, presaleAbi, signer);
         updateRemainingSupply();
     } catch (error) {
@@ -40,7 +75,7 @@ function calculateNoor() {
     const noorOutput = document.getElementById("noor-amount");
     if (!isNaN(sdaInput) && parseFloat(sdaInput) > 0) {
         const noorAmount = parseFloat(sdaInput) / 0.002; // 1 NOOR = 0.002 SDA
-        noorOutput.textContent = `${noorAmount.toLocaleString()} NOOR`;
+        noorOutput.textContent = `${noorAmount.toFixed(2)} NOOR`;
     } else {
         noorOutput.textContent = "0 NOOR";
     }
@@ -67,12 +102,6 @@ async function buyTokens() {
         console.error("Transaction failed:", error);
         document.getElementById("status").textContent = "❌ Transaction failed.";
     }
-}
-
-function toggleTheme() {
-    const body = document.body;
-    body.classList.toggle("dark");
-    body.classList.toggle("light");
 }
 
 window.onload = () => {
