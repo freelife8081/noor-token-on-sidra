@@ -1,95 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Noor Token Presale</title>
-  <link href="style.css" rel="stylesheet"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noor Token Presale</title>
+    <link rel="stylesheet" href="presale.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.min.js"></script>
 </head>
 <body>
-  <div class="container fade-in">
-    <!-- Logo -->
-    <img src="logo.png" alt="Noor Token Logo" class="logo"/>
+    <header>
+        <div class="container">
+            <h1>Noor Token Presale</h1>
+        </div>
+    </header>
 
-    <h1>Noor Token (NOOR) Presale</h1>
-    <p>Presale Price: <strong>1 NOOR = 0.002 SDA</strong></p>
-
-    <!-- Connect Wallet Button -->
-    <button onclick="connectWallet()" class="btn">🔗 Connect Wallet</button>
-
-    <div class="form">
-      <label>Enter SDA amount to spend:</label>
-      <input type="number" id="sdaAmount" placeholder="e.g. 100" oninput="calculateTokens()" />
-      <p>You will receive: <span id="noorAmount">0</span> NOOR</p>
-      <button onclick="buyTokens()" class="btn">Buy NOOR</button>
-    </div>
-
-    <hr>
-
-    <section class="fade-in">
-      <h2>About Us</h2>
-      <p>
-        We are a team of blockchain developers, scholars, and entrepreneurs focused on building ethical decentralized finance solutions. 
-        Noor Token is our vision of a halal, transparent, and accessible digital future on the Sidra blockchain.
-      </p>
+    <section class="presale-info">
+        <div class="container">
+            <h2>Welcome to the Noor Token Presale!</h2>
+            <p>Noor (NOOR) is a Sharia-compliant utility token built on the Sidra Chain, representing clarity, guidance, and ethical innovation. This presale allows you to buy NOOR tokens with SDA at a discounted price!</p>
+            <div>
+                <p><strong>Token Price:</strong> 1 NOOR = 0.002 SDA</p>
+                <p><strong>Presale Supply:</strong> 10,000,000,000 NOOR</p>
+                <p><strong>Remaining Supply:</strong> <span id="remaining-supply">Loading...</span> NOOR</p>
+            </div>
+        </div>
     </section>
 
-    <section class="fade-in">
-      <h2>Contact</h2>
-      <p>Email: <a href="mailto:team@noortoken.org">team@noortoken.org</a></p>
-      <p>Twitter: <a href="https://twitter.com/NoorToken" target="_blank">@NoorToken</a></p>
-      <p>Telegram: <a href="https://t.me/NoorTokenCommunity" target="_blank">t.me/NoorTokenCommunity</a></p>
+    <section class="buy-tokens">
+        <div class="container">
+            <h3>Buy NOOR Tokens</h3>
+            <div id="wallet-info">
+                <p><strong>Wallet Address:</strong> <span id="wallet-address">Not connected</span></p>
+            </div>
+            <input type="number" id="sda-amount" placeholder="Enter SDA amount" />
+            <button id="buy-button" onclick="buyTokens()">Buy Tokens</button>
+            <p id="status-message"></p>
+        </div>
     </section>
-  </div>
 
-  <script>
-    const PRESALE_CONTRACT    = "0xYourPresaleContractAddress"; // replace with your presale CA
-    const SDA_DECIMALS        = 18;
-    const NOOR_PER_SDA        = 500;   // 1 NOOR = 0.002 SDA → 1 SDA = 500 NOOR
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Noor Token | All Rights Reserved</p>
+        </div>
+    </footer>
 
-    let userAccount;
-
-    async function connectWallet() {
-      if (window.ethereum) {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        userAccount = accounts[0];
-        alert("Connected: " + userAccount);
-      } else {
-        alert("Please install MetaMask or another Web3 wallet.");
-      }
-    }
-
-    function calculateTokens() {
-      const sda = parseFloat(document.getElementById("sdaAmount").value || 0);
-      document.getElementById("noorAmount").innerText = sda * NOOR_PER_SDA;
-    }
-
-    async function buyTokens() {
-      const sdaValue = document.getElementById("sdaAmount").value;
-      if (!window.ethereum || !userAccount) {
-        alert("Please connect your wallet first.");
-        return;
-      }
-      const sdaAmount = BigInt(sdaValue * 10 ** SDA_DECIMALS).toString();
-
-      const txParams = {
-        from: userAccount,
-        to: PRESALE_CONTRACT,
-        value: "0x0",
-        data: "" // replace with your contract’s buy() call data if needed
-      };
-
-      try {
-        await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [txParams],
-        });
-        alert("Transaction sent!");
-      } catch (err) {
-        console.error(err);
-        alert("Transaction failed!");
-      }
-    }
-  </script>
+    <script src="presale.js"></script>
 </body>
 </html>
